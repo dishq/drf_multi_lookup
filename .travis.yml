@@ -47,6 +47,11 @@ install:
 script:
     - tox
 
+deploy:
+  distributions: "sdist bdist_wheel"
+  provider: pypi
+  skip_existing: true
+
 after_success:
     - pip install codecov
     - codecov -e TOXENV,DJANGO

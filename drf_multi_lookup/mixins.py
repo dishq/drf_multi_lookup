@@ -9,7 +9,6 @@ from functools import reduce
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models import Q
 from drf_writable_nested import (
-    WritableNestedModelSerializer,
     UniqueFieldsMixin, NestedUpdateMixin,
 )
 
@@ -57,11 +56,11 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
 
             if self.__get_lookup_fields(field):
                 instances = self._prefetch_related_instances_by_lookups(
-                    field_name, instance, field, related_data
+                    field_name, instance, field, related_data, related_field
                 )
             elif self.__get_lookup_field(field):
                 instances = self._prefetch_related_instances_by_lookup(
-                    field_name, instance, field, related_data
+                    field_name, instance, field, related_data, related_field
                 )
             else:
                 instances = self._prefetch_related_instances(
@@ -70,6 +69,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
 
             save_kwargs = self._get_save_kwargs(field_name)
             if isinstance(related_field, GenericRelation):
+
                 save_kwargs.update(
                     self._get_generic_lookup(instance, related_field),
                 )
@@ -87,7 +87,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                         )))
                 elif self.__get_lookup_field(field):
                     obj = instances.get(
-                        data.get(self.__get_lookup_field(field))
+                        str(data.get(self.__get_lookup_field(field)))
                     )
                 else:
                     obj = instances.get(
@@ -100,6 +100,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 )
                 try:
                     serializer.is_valid(raise_exception=True)
+
                     related_instance = serializer.save(**save_kwargs)
                     data['pk'] = related_instance.pk
                     new_related_instances.append(related_instance)
@@ -137,7 +138,8 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
         return None
 
     def _prefetch_related_instances_by_lookup(self, field_name, instance,
-                                              field, related_data):
+                                              field, related_data,
+                                              related_field):
         """
         Lookup if look up is present or take pk
         :param field_name:
@@ -150,9 +152,21 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             field,
             related_data
         )
+        model_class = field.Meta.model
         lookup_filter = {
             f"{self.__get_lookup_field(field)}__in": lookup_field_values
         }
+
+        if related_field.many_to_many:
+            instances = {
+                str(
+                    getattr(related_instance, self.__get_lookup_field(field))
+                ): related_instance
+                for related_instance in model_class.objects.
+                filter(**lookup_filter)
+            }
+
+            return instances
         instances = {
             str(
                 getattr(related_instance, self.__get_lookup_field(field))
@@ -166,7 +180,8 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
     def _prefetch_related_instances_by_lookups(self,
                                                field_name,
                                                instance,
-                                               field, related_data):
+                                               field, related_data,
+                                               related_field):
         """
         Lookup if look up is present or take pk
         :param field_name:
@@ -175,6 +190,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
         :param related_data:
         :return:
         """
+
         lookup_field_values = self._get_lookup_fields_values(
             field,
             related_data
@@ -183,7 +199,19 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             Q(**lookup_field_value)
             for lookup_field_value in lookup_field_values
         ]
+        model_class = field.Meta.model
         lookup_filter = reduce(lambda a, b: a | b, args)
+        if related_field.many_to_many:
+            instances = {
+                self.__get_combined_key(
+                    related_data,
+                    self.__get_lookup_fields(field)
+                ): related_instance
+                for related_instance in model_class.objects.
+                filter(*lookup_filter)
+            }
+
+            return instances
         instances = {
             self.__get_combined_key(
                 related_data,

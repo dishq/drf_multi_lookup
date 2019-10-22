@@ -8,7 +8,7 @@ DRF Multi Lookup
 
 This is a package written on top of
 [drf-writable-nested](https://github.com/beda-software/drf-writable-nested)
-inorder to make API calls without knowing exact Primary Key
+inorder to make calls to serializer without knowing exact Primary Key
 but using candidate keys.
 
 Requirements

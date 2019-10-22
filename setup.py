@@ -26,7 +26,7 @@ with open('README.md') as f:
 setup(
     name='drf-multi-lookup',
     version=version,
-    url='http://github.com/dishq/drf-multi-lookup',
+    url='http://github.com/dishq/drf_multi_lookup',
     license='MIT',
     description=(
         'Multi Field Lookup over pk for DRF Nested Serializers'),
@@ -49,7 +49,7 @@ setup(
         'Framework :: Django :: 2.1',
         'Framework :: Django :: 2.2',
         'Intended Audience :: Developers',
-        'License :: FOSS :: MIT License',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',

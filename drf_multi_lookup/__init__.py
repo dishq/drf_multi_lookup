@@ -2,14 +2,13 @@
 """
 DRF multi lookup
 """
+from .mixins import MultiLookUpMixin
+
 __title__ = 'DRF Multi Lookup'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __author__ = 'Spoonshot'
 __license__ = 'MIT Licence'
 __copyright__ = 'Copyright 2019 Spoonshot'
 
 # Version synonym
 VERSION = __version__
-
-
-from .mixins import Mult
