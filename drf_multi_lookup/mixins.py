@@ -154,7 +154,8 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
         )
         model_class = field.Meta.model
         lookup_filter = {
-            f"{self.__get_lookup_field(field)}__in": lookup_field_values
+            "{}__in".format(self.__get_lookup_field(field)):
+                lookup_field_values
         }
 
         if related_field.many_to_many:
@@ -224,7 +225,9 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
 
     def __get_combined_key(self, lookup_fields, related_data):
         keys = [
-            f"{related_data.get(field, '0')}" for field in lookup_fields
+            "{}".format(
+                related_data.get(field, '0')
+            ) for field in lookup_fields
         ]
         return "-".join(keys)
 
@@ -314,3 +317,32 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 )
             except ValidationError as exc:
                 raise ValidationError({field_name: exc.detail})
+
+    def save(self, **kwargs):
+        """
+        Check if Meta has lookup_fields
+        :param kwargs:
+        :return:
+        """
+        if self.instance is None:
+            model_class = self.Meta.model
+            lookup_field = self.__get_lookup_field(self)
+            lookup_fields = self.__get_lookup_fields(self)
+            if lookup_field:
+                self.instance = model_class.objects.filter(
+                    **{
+                        lookup_field:
+                            self.initial_data[lookup_field]
+                    }
+                ).first()
+            elif lookup_fields:
+                self.instance = model_class.objects.filter(
+                    **{
+                        field: self.initial_data[field]
+                        for field in lookup_fields
+                    }
+                ).first()
+        return super(
+            MultiLookUpMixin,
+            self
+        ).save(**kwargs)
