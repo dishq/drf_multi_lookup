@@ -280,7 +280,12 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             obj = None
             data = self.get_initial()[field_name]
             model_class = field.Meta.model
-            if self.__get_lookup_fields(field):
+            if self._get_related_pk(data, model_class):
+                if pk:
+                    obj = model_class.objects.filter(
+                        pk=pk,
+                    ).first()
+            elif self.__get_lookup_fields(field):
                 single_instance = {}
                 for field_name in self.__get_lookup_fields(field):
                     pk = data.get(field_name)
