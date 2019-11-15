@@ -281,7 +281,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             data = self.get_initial()[field_name]
             model_class = field.Meta.model
             if self._get_related_pk(data, model_class):
-                pk = data.get(self.__get_lookup_field(field))
+                pk = self._get_related_pk(data, model_class)
                 if pk:
                     obj = model_class.objects.filter(
                         pk=pk,
@@ -324,7 +324,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             except ValidationError as exc:
                 raise ValidationError({field_name: exc.detail})
 
-    def save(self, **kwargs):
+    def save(self, validated_data, **kwargs):
         """
         Check if Meta has lookup_fields
         :param kwargs:
@@ -334,7 +334,13 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             model_class = self.Meta.model
             lookup_field = self.__get_lookup_field(self)
             lookup_fields = self.__get_lookup_fields(self)
-            if lookup_field:
+            if self._get_related_pk(self.validated_data, model_class):
+                pk = self._get_related_pk(self.validated_data, model_class)
+                if pk:
+                    self.instance = model_class.objects.get(
+                        pk=pk,
+                    )
+            elif lookup_field:
                 self.instance = model_class.objects.filter(
                     **{
                         lookup_field:
