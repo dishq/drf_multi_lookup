@@ -334,8 +334,8 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             model_class = self.Meta.model
             lookup_field = self.__get_lookup_field(self)
             lookup_fields = self.__get_lookup_fields(self)
-            if self._get_related_pk(self.validated_data, model_class):
-                pk = self._get_related_pk(self.validated_data, model_class)
+            if self._get_related_pk(self.initial_data, model_class):
+                pk = self._get_related_pk(self.initial_data, model_class)
                 if pk:
                     self.instance = model_class.objects.get(
                         pk=pk,
