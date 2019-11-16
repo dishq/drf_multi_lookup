@@ -324,7 +324,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             except ValidationError as exc:
                 raise ValidationError({field_name: exc.detail})
 
-    def save(self, validated_data, **kwargs):
+    def save(self, **kwargs):
         """
         Check if Meta has lookup_fields
         :param kwargs:
