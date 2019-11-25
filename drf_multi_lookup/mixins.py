@@ -5,7 +5,7 @@ Mixins contain multilookup script
 # coding=utf-8
 
 from functools import reduce
-
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models import Q
 from drf_writable_nested import (
@@ -13,6 +13,7 @@ from drf_writable_nested import (
 )
 
 from rest_framework.exceptions import ValidationError
+from rest_framework import serializers
 
 
 class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
@@ -283,9 +284,14 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             if self._get_related_pk(data, model_class):
                 pk = self._get_related_pk(data, model_class)
                 if pk:
-                    obj = model_class.objects.filter(
-                        pk=pk,
-                    ).first()
+                    try:
+                        obj = model_class.objects.get(
+                            pk=pk,
+                        )
+                    except ObjectDoesNotExist:
+                        raise serializers.ValidationError(
+                            "It is either deleted or soft deleted"
+                        )
             elif self.__get_lookup_fields(field):
                 single_instance = {}
                 for field_name in self.__get_lookup_fields(field):
@@ -307,9 +313,14 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             else:
                 pk = self._get_related_pk(data, model_class)
                 if pk:
-                    obj = model_class.objects.filter(
-                        pk=pk,
-                    ).first()
+                    try:
+                        obj = model_class.objects.get(
+                            pk=pk,
+                        )
+                    except ObjectDoesNotExist:
+                        raise serializers.ValidationError(
+                            "It is either deleted or soft deleted"
+                        )
             serializer = self._get_serializer_for_field(
                 field,
                 instance=obj,
@@ -337,9 +348,14 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             if self._get_related_pk(self.initial_data, model_class):
                 pk = self._get_related_pk(self.initial_data, model_class)
                 if pk:
-                    self.instance = model_class.objects.get(
-                        pk=pk,
-                    )
+                    try:
+                        self.instance = model_class.objects.get(
+                            pk=pk,
+                        )
+                    except ObjectDoesNotExist:
+                        raise serializers.ValidationError(
+                            "It is either deleted or soft deleted"
+                        )
             elif lookup_field:
                 self.instance = model_class.objects.filter(
                     **{
@@ -358,3 +374,29 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             MultiLookUpMixin,
             self
         ).save(**kwargs)
+
+
+class ReadOnlyMultiLookupMixin(MultiLookUpMixin):
+    """
+    can only read no update or create
+    """
+
+    def update(self, instance, validated_data):
+        """
+        No Update ingredient form
+        :param instance:
+        :param validated_data:
+        :return:
+        """
+        return instance
+
+    def create(self, validated_data):
+        """
+        No Update ingredient form
+        :param instance:
+        :param validated_data:
+        :return:
+        """
+        raise serializers.ValidationError("No Existing {} instance".format(
+            self.Meta.model.__class__.__name__)
+        )
