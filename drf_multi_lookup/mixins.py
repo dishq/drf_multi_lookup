@@ -101,7 +101,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 )
                 try:
                     serializer.is_valid(raise_exception=True)
-
+                    serializer.has_parent = True
                     related_instance = serializer.save(**save_kwargs)
                     data['pk'] = related_instance.pk
                     new_related_instances.append(related_instance)
@@ -329,18 +329,25 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
 
             try:
                 serializer.is_valid(raise_exception=True)
+                serializer.has_parent = True
                 attrs[field_source] = serializer.save(
                     **self._get_save_kwargs(field_name)
                 )
             except ValidationError as exc:
                 raise ValidationError({field_name: exc.detail})
 
-    def save(self, **kwargs):
+    def create(self, validated_data):
         """
         Check if Meta has lookup_fields
-        :param kwargs:
+        :param validated_data:
         :return:
         """
+        if hasattr(self, "has_parent") and getattr(self, "has_parent"):
+            return super(
+                MultiLookUpMixin,
+                self
+            ).create(validated_data)
+
         if self.instance is None:
             model_class = self.Meta.model
             lookup_field = self.__get_lookup_field(self)
@@ -348,14 +355,9 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             if self._get_related_pk(self.initial_data, model_class):
                 pk = self._get_related_pk(self.initial_data, model_class)
                 if pk:
-                    try:
-                        self.instance = model_class.objects.get(
-                            pk=pk,
-                        )
-                    except ObjectDoesNotExist:
-                        raise serializers.ValidationError(
-                            "It is either deleted or soft deleted"
-                        )
+                    self.instance = model_class.objects.get(
+                        pk=pk,
+                    )
             elif lookup_field:
                 self.instance = model_class.objects.filter(
                     **{
@@ -370,10 +372,17 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                         for field in lookup_fields
                     }
                 ).first()
-        return super(
-            MultiLookUpMixin,
-            self
-        ).save(**kwargs)
+
+        if self.instance:
+            return super(
+                MultiLookUpMixin,
+                self
+            ).update(self.instance, validated_data)
+        else:
+            return super(
+                MultiLookUpMixin,
+                self
+            ).create(validated_data)
 
 
 class ReadOnlyMultiLookupMixin(MultiLookUpMixin):
