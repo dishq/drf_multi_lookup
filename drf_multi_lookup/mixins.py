@@ -174,8 +174,8 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 getattr(related_instance, self.__get_lookup_field(field))
             ): related_instance
             for related_instance in getattr(instance, field_name).filter(
-                **lookup_filter
-            )
+            **lookup_filter
+        )
         }
         return instances
 
@@ -197,6 +197,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             field,
             related_data
         )
+
         args = [
             Q(**lookup_field_value)
             for lookup_field_value in lookup_field_values
@@ -210,7 +211,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                     self.__get_lookup_fields(field)
                 ): related_instance
                 for related_instance in model_class.objects.
-                filter(*lookup_filter)
+                filter(lookup_filter)
             }
 
             return instances
@@ -220,11 +221,11 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 self.__get_lookup_fields(field)
             ): related_instance
             for related_instance in getattr(instance, field_name).
-            filter(*lookup_filter)
+            filter(lookup_filter)
         }
         return instances
 
-    def __get_combined_key(self, lookup_fields, related_data):
+    def __get_combined_key(self, related_data, lookup_fields):
         keys = [
             "{}".format(
                 related_data.get(field, '0')
@@ -261,7 +262,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             single_instance = {}
             for field_name in self.__get_lookup_fields(field):
                 pk = d.get(field_name)
-                if pk:
+                if pk is not None:
                     single_instance.update({
                         field_name: pk
                     })
@@ -283,7 +284,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             model_class = field.Meta.model
             if self._get_related_pk(data, model_class):
                 pk = self._get_related_pk(data, model_class)
-                if pk:
+                if pk is not None:
                     try:
                         obj = model_class.objects.get(
                             pk=pk,
@@ -296,7 +297,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 single_instance = {}
                 for field_name in self.__get_lookup_fields(field):
                     pk = data.get(field_name)
-                    if pk:
+                    if pk is not None:
                         single_instance.update({
                             field_name: pk
                         })
@@ -306,13 +307,13 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                     ).first()
             elif self.__get_lookup_field(field):
                 pk = data.get(self.__get_lookup_field(field))
-                if pk:
+                if pk is not None:
                     obj = model_class.objects.filter(
                         **{self.__get_lookup_field(field): pk}
                     ).first()
             else:
                 pk = self._get_related_pk(data, model_class)
-                if pk:
+                if pk is not None:
                     try:
                         obj = model_class.objects.get(
                             pk=pk,
