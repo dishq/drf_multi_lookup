@@ -81,11 +81,17 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             errors = []
             for data in related_data:
                 if self.__get_lookup_fields(field):
-                    obj = instances.get(data.get(
+                    if related_field.many_to_many:
+                        instance_pk = None
+                    else:
+                        instance_pk = instance.pk
+
+                    obj = instances.get(
                         self.__get_combined_key(
                             data,
-                            self.__get_lookup_fields(field)
-                        )))
+                            self.__get_lookup_fields(field),
+                            instance_pk
+                        ))
                 elif self.__get_lookup_field(field):
                     obj = instances.get(
                         str(data.get(self.__get_lookup_field(field)))
@@ -174,8 +180,8 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 getattr(related_instance, self.__get_lookup_field(field))
             ): related_instance
             for related_instance in getattr(instance, field_name).filter(
-            **lookup_filter
-        )
+                **lookup_filter
+            )
         }
         return instances
 
@@ -204,10 +210,11 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
         ]
         model_class = field.Meta.model
         lookup_filter = reduce(lambda a, b: a | b, args)
+        instances = {}
         if related_field.many_to_many:
             instances = {
-                self.__get_combined_key(
-                    related_data,
+                self.__get_combined_key_from_instance(
+                    related_instance,
                     self.__get_lookup_fields(field)
                 ): related_instance
                 for related_instance in model_class.objects.
@@ -215,22 +222,40 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             }
 
             return instances
-        instances = {
-            self.__get_combined_key(
-                related_data,
-                self.__get_lookup_fields(field)
+
+        instance.update({
+            self.__get_combined_key_from_instance(
+                related_instance,
+                self.__get_lookup_fields(field),
+                instance.pk
             ): related_instance
             for related_instance in getattr(instance, field_name).
             filter(lookup_filter)
-        }
+        })
         return instances
 
-    def __get_combined_key(self, related_data, lookup_fields):
+    def __get_combined_key(self, related_data, lookup_fields,
+                           instance=None):
+
         keys = [
             "{}".format(
                 related_data.get(field, '0')
             ) for field in lookup_fields
         ]
+        if instance:
+            keys = keys + [str(instance.pk)]
+        return "-".join(keys)
+
+    def __get_combined_key_from_instance(
+            self, related_instance, lookup_fields, instance=None
+    ):
+        keys = [
+            "{}".format(
+                getattr(related_instance, field)
+            ) for field in lookup_fields
+        ]
+        if instance:
+            keys = keys + [str(instance.pk)]
         return "-".join(keys)
 
     def _get_lookup_field_values(self, field, related_data):
