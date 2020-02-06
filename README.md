@@ -31,6 +31,14 @@ Development
 ===========
 
 
+Deployment
+==========
+
+Change version in __init__.py
+
+python setup.py sdist bdist_wheel
+
+twine upload dist/*
 
 Authors
 =======

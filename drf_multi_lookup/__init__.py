@@ -5,7 +5,7 @@ DRF multi lookup
 from .mixins import MultiLookUpMixin
 
 __title__ = 'DRF Multi Lookup'
-__version__ = '0.0.20'
+__version__ = '0.0.21'
 __author__ = 'Spoonshot'
 __license__ = 'MIT Licence'
 __copyright__ = 'Copyright 2019 Spoonshot'
