@@ -209,6 +209,10 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             for lookup_field_value in lookup_field_values
         ]
         model_class = field.Meta.model
+        # no filter to apply
+        if not args:
+            return {}
+        # should not reach here if args are empty
         lookup_filter = reduce(lambda a, b: a | b, args)
         instances = {}
         if related_field.many_to_many:
