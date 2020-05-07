@@ -37,7 +37,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
             # Skip processing for empty data or not-specified field.
             # The field can be defined in validated_data but isn't defined
             # in initial_data (for example, if multipart form data used)
-            related_data = self.validated_data.get(field_name, None)
+            related_data = self.get_initial().get(field_name, None)
             if related_data is None:
                 continue
 
@@ -309,7 +309,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
 
         for field_name, (field, field_source) in relations.items():
             obj = None
-            data = self.validated_data[field_name]
+            data = self.get_initial()[field_name]
             model_class = field.Meta.model
             if self._get_related_pk(data, model_class):
                 pk = self._get_related_pk(data, model_class)
