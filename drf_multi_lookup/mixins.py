@@ -227,7 +227,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
 
             return instances
 
-        instance.update({
+        instances.update({
             self.__get_combined_key_from_instance(
                 related_instance,
                 self.__get_lookup_fields(field),
