@@ -404,10 +404,7 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 ).first()
 
         if self.instance:
-            return super(
-                MultiLookUpMixin,
-                self
-            ).update(self.instance, validated_data)
+            return self.update(self.instance, validated_data)
         else:
             return super(
                 MultiLookUpMixin,
