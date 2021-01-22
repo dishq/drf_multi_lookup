@@ -411,6 +411,16 @@ class MultiLookUpMixin(UniqueFieldsMixin, NestedUpdateMixin):
                 self
             ).create(validated_data)
 
+    def update(self, instance, validated_data):
+        """
+        Overriding update for those which doesn't have it
+        """
+        return super(
+            MultiLookUpMixin,
+            self
+        ).update(instance, validated_data)
+
+
 
 class ReadOnlyMultiLookupMixin(MultiLookUpMixin):
     """
